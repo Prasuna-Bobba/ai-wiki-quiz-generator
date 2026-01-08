@@ -1,8 +1,50 @@
-<h2>AI Wiki Quiz Generator</h2>
-<form method="post">
-  {% csrf_token %}
-  <input type="url" placeholder="Enter Wikipedia URL">
-  <button>Generate Quiz</button>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Wiki Quiz Generator</title>
+</head>
+<body>
+
+<h1>AI Wiki Quiz Generator</h1>
+
+<form method="POST">
+    {% csrf_token %}
+    <input type="url" name="wiki_url" placeholder="Enter Wikipedia URL" required>
+    <button type="submit">Generate Quiz</button>
 </form>
 
-<a href="/history/">View History</a>
+<hr>
+<hr>
+
+<a href="{% url 'history' %}">
+    <button type="button">View History</button>
+</a>
+
+<hr>
+{% if error %}
+    <p style="color:red;">{{ error }}</p>
+{% endif %}
+
+{% if quiz %}
+    <h2>{{ quiz.title }}</h2>
+
+    {% for q in quiz.questions %}
+        <div style="border:1px solid #000; padding:10px; margin-bottom:10px;">
+            <p><strong>Question:</strong> {{ q.question }}</p>
+
+            <ul>
+                {% for option in q.options %}
+                    <li>{{ option }}</li>
+                {% endfor %}
+            </ul>
+
+            <p><strong>Answer:</strong> {{ q.answer }}</p>
+            <p><strong>Difficulty:</strong> {{ q.difficulty }}</p>
+            <p><strong>Explanation:</strong> {{ q.explanation }}</p>
+        </div>
+    {% endfor %}
+{% endif %}
+
+</body>
+</html>
+
