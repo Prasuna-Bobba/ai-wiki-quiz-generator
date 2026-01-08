@@ -1,0 +1,8 @@
+<h2>AI Wiki Quiz Generator</h2>
+<form method="post">
+  {% csrf_token %}
+  <input type="url" placeholder="Enter Wikipedia URL">
+  <button>Generate Quiz</button>
+</form>
+
+<a href="/history/">View History</a>
