@@ -1,47 +1,69 @@
+from django.shortcuts import render
 import requests
 from bs4 import BeautifulSoup
-from django.shortcuts import render
-from .models import Quiz, Question
+from .models import Quiz
 
 def home(request):
     quiz = None
+    error = None
 
     if request.method == "POST":
-        url = request.POST.get("url")
+        wiki_url = request.POST.get("wiki_url")
 
-        html = requests.get(url).text
-        soup = BeautifulSoup(html, "html.parser")
-        title = soup.find("h1").text
+        if not wiki_url:
+            error = "Please enter a Wikipedia URL."
+        else:
+            try:
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+                }
 
-        quiz = Quiz.objects.create(url=url, title=title)
+                response = requests.get(wiki_url, headers=headers, timeout=15)
 
-        # Sample questions (guaranteed to show)
-        Question.objects.create(
-            quiz=quiz,
-            question="What is Artificial Intelligence?",
-            option_a="A branch of biology",
-            option_b="Simulation of human intelligence in machines",
-            option_c="A hardware device",
-            option_d="A programming language",
-            answer="B",
-            explanation="AI simulates human intelligence in machines."
-        )
+                #  CHECK RESPONSE
+                if response.status_code != 200:
+                    raise Exception("Wikipedia page not reachable")
 
-        Question.objects.create(
-            quiz=quiz,
-            question="Which field is related to AI?",
-            option_a="Machine Learning",
-            option_b="Civil Engineering",
-            option_c="Mechanical Design",
-            option_d="Accounting",
-            answer="A",
-            explanation="Machine Learning is a core part of AI."
-        )
+                soup = BeautifulSoup(response.text, "html.parser")
 
-    return render(request, "home.html", {"quiz": quiz})
+                h1 = soup.find("h1")
+                if not h1:
+                    raise Exception("Title not found")
+
+                title = h1.get_text(strip=True)
+
+                # Save quiz
+                Quiz.objects.create(
+                    title=title,
+                    url=wiki_url
+                )
+
+                quiz = {
+                    "title": title,
+                    "questions": [
+                        {
+                            "question": "What is this Wikipedia article mainly about?",
+                            "options": [
+                                "Science",
+                                "Technology",
+                                "History",
+                                "All of the above"
+                            ],
+                            "answer": "All of the above",
+                            "difficulty": "easy",
+                            "explanation": "Based on the introductory section of the article."
+                        }
+                    ]
+                }
+
+            except Exception as e:
+                error = f"Unable to fetch Wikipedia content: {str(e)}"
+
+    return render(request, "home.html", {
+        "quiz": quiz,
+        "error": error
+    })
 
 
 def history(request):
-    quizzes = Quiz.objects.all()
-    return render(request, "history.html", {"quizzes": quizzes})
-
+    return render(request, "history.html")
